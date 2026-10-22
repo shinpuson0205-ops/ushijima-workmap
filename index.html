@@ -1,0 +1,818 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WORKMAP // OPS CONSOLE</title>
+
+<style>
+:root{
+  --bg:#f4f7f9;
+  --panel:#ffffff;
+  --panel2:#f8fafb;
+  --line:#d9e1e7;
+  --text:#16212b;
+  --muted:#6f7f8d;
+  --amber:#b98624;
+  --amber-soft:#fff7df;
+  --red:#c24f4f;
+  --red-soft:#fff1f1;
+  --green:#328b6f;
+  --green-soft:#edf8f4;
+  --cyan:#4f8298;
+  --shadow:0 8px 28px rgba(26,42,56,.08);
+}
+*{box-sizing:border-box}
+html,body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Yu Gothic UI","Hiragino Kaku Gothic ProN",Meiryo,sans-serif;
+  height:100%;
+}
+body:before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  opacity:.55;
+  background-image:
+    linear-gradient(rgba(88,110,126,.035) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(88,110,126,.035) 1px,transparent 1px);
+  background-size:32px 32px;
+}
+button,input,textarea,select{font:inherit}
+button{cursor:pointer}
+.app{min-height:100vh}
+
+.top{
+  height:66px;
+  border-bottom:1px solid var(--line);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 22px;
+  background:rgba(255,255,255,.94);
+  position:sticky;
+  top:0;
+  z-index:30;
+  backdrop-filter:blur(12px);
+  box-shadow:0 2px 10px rgba(26,42,56,.04);
+}
+.brand{display:flex;align-items:center;gap:13px}
+.mark{
+  width:24px;height:24px;
+  border:2px solid var(--amber);
+  position:relative;
+  transform:rotate(45deg);
+  background:#fffdf7;
+}
+.mark:after{
+  content:"";
+  position:absolute;
+  inset:5px;
+  border:1px solid var(--amber);
+}
+.brand strong{font-size:17px;letter-spacing:.14em}
+.brand small{display:block;color:var(--muted);font-size:11px;letter-spacing:.10em;margin-top:3px}
+.sync{font-size:13px;color:var(--green);letter-spacing:.06em;font-weight:700}
+.top-actions{display:flex;gap:8px;align-items:center}
+
+.icon-btn,.ghost,.solid{
+  border:1px solid var(--line);
+  background:#fff;
+  color:var(--text);
+  border-radius:8px;
+  padding:9px 12px;
+  box-shadow:0 2px 8px rgba(26,42,56,.04);
+}
+.icon-btn:hover,.ghost:hover{background:#f7f9fb}
+.solid{
+  background:#23313d;
+  border-color:#23313d;
+  color:#fff;
+  font-weight:700;
+}
+.solid:hover{background:#18242e}
+
+.layout{display:grid;grid-template-columns:360px 1fr;min-height:calc(100vh - 66px)}
+.sidebar{
+  border-right:1px solid var(--line);
+  padding:15px;
+  background:rgba(250,252,253,.95);
+  overflow:auto;
+}
+.search{display:flex;gap:8px;margin-bottom:12px}
+.search input{
+  width:100%;
+  background:#fff;
+  border:1px solid var(--line);
+  color:var(--text);
+  border-radius:8px;
+  padding:11px 12px;
+  outline:none;
+  font-size:14px;
+}
+.search input:focus{border-color:#9db0bd;box-shadow:0 0 0 3px rgba(79,130,152,.08)}
+
+.nav{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:14px}
+.nav button{
+  padding:9px 6px;
+  background:#fff;
+  border:1px solid var(--line);
+  color:var(--muted);
+  border-radius:7px;
+  font-size:12px;
+  font-weight:700;
+}
+.nav button.active{
+  color:#7a5918;
+  border-color:#d9bf82;
+  background:var(--amber-soft);
+}
+
+.tree ul{list-style:none;padding-left:17px;margin:3px 0}
+.row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:9px 8px;
+  border-radius:7px;
+  margin:2px 0;
+  cursor:pointer;
+  color:#40515e;
+}
+.row:hover{background:#eef3f6}
+.row.sel{
+  background:#e9f0f4;
+  color:#17242e;
+  border-left:3px solid var(--amber);
+  font-weight:700;
+}
+.toggle{width:20px;background:none;border:0;color:#8796a3;padding:0;font-size:14px}
+.label{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:15px}
+.dot{width:8px;height:8px;border-radius:50%}
+.dot.h{background:var(--red)}
+.dot.m{background:var(--amber)}
+.dot.l{background:#66869a}
+
+.main{padding:24px 28px 48px;overflow:auto}
+.view{max-width:1220px;margin:0 auto}
+.path{
+  font-size:12px;
+  color:#7e8d99;
+  letter-spacing:.04em;
+  margin-bottom:11px;
+}
+.head{
+  display:flex;
+  justify-content:space-between;
+  gap:16px;
+  align-items:flex-start;
+  padding:2px 0 17px;
+  border-bottom:1px solid var(--line);
+}
+.head h1{
+  font-size:32px;
+  line-height:1.35;
+  margin:0;
+  letter-spacing:.005em;
+  outline:none;
+  border-radius:7px;
+  padding:3px 6px;
+  margin-left:-6px;
+}
+.head h1:hover{background:#f0f4f6}
+.head h1:focus{
+  background:#fff8e5;
+  box-shadow:inset 0 -2px 0 var(--amber);
+}
+
+.meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.chip{
+  font-size:12px;
+  padding:6px 9px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  color:#607180;
+  background:#fff;
+}
+.chip.warn{border-color:#e4c67f;color:#8a651c;background:#fffaf0}
+.chip.danger{border-color:#e3aaaa;color:#a23d3d;background:#fff5f5}
+.head-actions{display:flex;gap:8px}
+
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-top:18px}
+.block{
+  border:1px solid var(--line);
+  background:#fff;
+  border-radius:11px;
+  min-height:184px;
+  box-shadow:var(--shadow);
+}
+.block-head{
+  height:44px;
+  border-bottom:1px solid #e8edf0;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 14px;
+  background:#fbfcfd;
+  border-radius:11px 11px 0 0;
+}
+.block-head strong{
+  font-size:13px;
+  letter-spacing:.08em;
+  color:#61717e;
+}
+.block-head span{font-size:10px;color:#a1adb6}
+.editor{
+  min-height:138px;
+  padding:15px 16px;
+  outline:none;
+  white-space:pre-wrap;
+  line-height:1.85;
+  font-size:17px;
+  color:#263641;
+}
+.editor:empty:before{content:attr(data-placeholder);color:#a3aeb6}
+.next{border-color:#ddc687}
+.next .block-head{background:#fffaf0}
+.next .block-head strong{color:#8a651c}
+.next .editor{font-size:18px}
+
+.details{
+  margin-top:13px;
+  border:1px solid var(--line);
+  border-radius:9px;
+  background:#fff;
+}
+.details summary{
+  list-style:none;
+  padding:12px 14px;
+  cursor:pointer;
+  color:#768693;
+  font-size:12px;
+  letter-spacing:.08em;
+  font-weight:700;
+}
+.details summary::-webkit-details-marker{display:none}
+.detail-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:0 14px 14px}
+.f label{display:block;font-size:11px;color:#81909b;margin-bottom:6px}
+.f input,.f select{
+  width:100%;
+  background:#fbfcfd;
+  border:1px solid var(--line);
+  color:#243440;
+  border-radius:7px;
+  padding:10px;
+  font-size:14px;
+}
+
+.children{margin-top:18px}
+.children-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.children-top strong{font-size:13px;letter-spacing:.09em;color:#6d7e8b}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(235px,1fr));gap:10px}
+.card{
+  border:1px solid var(--line);
+  background:#fff;
+  border-radius:9px;
+  padding:14px;
+  cursor:pointer;
+  box-shadow:0 3px 12px rgba(26,42,56,.04);
+}
+.card:hover{border-color:#b9c7d0;background:#fbfcfd}
+.card .t{font-size:15px;font-weight:700}
+.card .s{font-size:12px;color:#7c8b97;margin-top:7px}
+
+.list{display:flex;flex-direction:column;gap:9px;margin-top:18px}
+.item{
+  border:1px solid var(--line);
+  background:#fff;
+  border-radius:9px;
+  padding:14px 15px;
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  align-items:center;
+  cursor:pointer;
+  box-shadow:0 3px 12px rgba(26,42,56,.035);
+}
+.item:hover{background:#fbfcfd;border-color:#bcc9d2}
+.item .left b{font-size:15px}
+.item .left div{font-size:12px;color:#7c8b97;margin-top:5px}
+.item .right{font-size:12px;color:#7d8c98}
+.empty{color:#8c9aa5;font-size:14px;padding:20px 2px}
+
+.modal{
+  position:fixed;
+  inset:0;
+  background:rgba(44,58,68,.28);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:60;
+  backdrop-filter:blur(3px);
+}
+.modal.show{display:flex}
+.box{
+  width:min(540px,92vw);
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:12px;
+  box-shadow:0 20px 60px rgba(33,48,60,.16);
+  padding:19px;
+}
+.box h3{font-size:15px;letter-spacing:.06em;margin:0 0 13px}
+.box input,.box textarea,.box select{
+  width:100%;
+  background:#fbfcfd;
+  border:1px solid var(--line);
+  color:var(--text);
+  border-radius:7px;
+  padding:11px;
+  margin-top:7px;
+  font-size:14px;
+}
+.box textarea{min-height:105px;resize:vertical}
+.box .actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+
+.settings{
+  position:fixed;
+  right:16px;
+  top:76px;
+  width:280px;
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:10px;
+  display:none;
+  z-index:50;
+  box-shadow:0 16px 50px rgba(33,48,60,.14);
+}
+.settings.show{display:block}
+.settings button,.settings label{
+  display:block;
+  width:100%;
+  text-align:left;
+  background:none;
+  border:0;
+  color:#4b5d6b;
+  padding:11px;
+  border-radius:7px;
+  font-size:13px;
+}
+.settings button:hover,.settings label:hover{background:#f2f5f7}
+.smallhint{font-size:11px;color:#8796a1;margin-top:9px}
+
+/* Cloud auth */
+.auth-gate{
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+  position:relative;
+  z-index:5;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(185,134,36,.08), transparent 28%),
+    radial-gradient(circle at 80% 70%, rgba(79,130,152,.07), transparent 28%);
+}
+.auth-panel{
+  width:min(460px,94vw);
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:14px;
+  box-shadow:0 24px 70px rgba(33,48,60,.13);
+  padding:28px;
+}
+.auth-kicker{font-size:11px;color:#98701f;letter-spacing:.15em;margin-bottom:9px;font-weight:700}
+.auth-panel h1{font-size:30px;margin:0 0 8px;letter-spacing:.04em}
+.auth-panel p{font-size:14px;color:var(--muted);line-height:1.75;margin:0 0 20px}
+.auth-panel input{
+  width:100%;
+  background:#fbfcfd;
+  border:1px solid var(--line);
+  color:var(--text);
+  border-radius:8px;
+  padding:13px 14px;
+  margin:6px 0;
+  outline:none;
+  font-size:15px;
+}
+.auth-panel input:focus{border-color:#aebdc7;box-shadow:0 0 0 3px rgba(79,130,152,.08)}
+.auth-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:13px}
+.auth-msg{min-height:22px;font-size:13px;color:#71818e;margin-top:11px;line-height:1.5}
+.auth-msg.err{color:#c24f4f}
+.auth-msg.ok{color:#328b6f}
+.account-line{
+  padding:10px 11px;
+  color:#71818e;
+  font-size:12px;
+  border-bottom:1px solid #e8edf0;
+  margin-bottom:6px;
+  word-break:break-all;
+}
+.cloud-pill{display:inline-flex;align-items:center;gap:6px}
+.cloud-pill:before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+
+@media(max-width:900px){
+  .layout{grid-template-columns:1fr}
+  .sidebar{display:none}
+  .sidebar.mobile{
+    display:block;
+    position:fixed;
+    inset:66px 0 0 0;
+    z-index:40;
+    background:#f9fbfc;
+  }
+  .main{padding:18px}
+  .grid{grid-template-columns:1fr}
+  .detail-grid{grid-template-columns:1fr 1fr}
+  .head h1{font-size:27px}
+  .brand strong{font-size:15px}
+  .brand small{display:none}
+  .editor{font-size:16px}
+  .next .editor{font-size:17px}
+}
+</style>
+
+</head>
+<body>
+
+<div id="authGate" class="auth-gate">
+  <div class="auth-panel">
+    <div class="auth-kicker">PRIVATE ACCESS // WORKMAP</div>
+    <h1>WORKMAP</h1>
+    <p>ログインすると、PC・スマホ・別ブラウザでも同じWorkMapを続きから使えます。</p>
+    <input id="authEmail" type="email" autocomplete="email" placeholder="メールアドレス">
+    <input id="authPassword" type="password" autocomplete="current-password" placeholder="パスワード（6文字以上）">
+    <div class="auth-actions">
+      <button id="signInBtn" class="solid">LOGIN</button>
+      <button id="signUpBtn" class="ghost">初回登録</button>
+    </div>
+    <div id="authMsg" class="auth-msg"></div>
+  </div>
+</div>
+
+<div id="app" class="app" style="display:none">
+  <header class="top">
+    <div class="brand">
+      <div class="mark"></div>
+      <div><strong>WORKMAP // OPS</strong><small>PRIVATE DECISION SUPPORT CONSOLE</small></div>
+    </div>
+    <div class="top-actions">
+      <span id="sync" class="sync">SAVED</span>
+      <button id="mobileTree" class="icon-btn">MAP</button>
+      <button id="settingsBtn" class="icon-btn">•••</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside id="sidebar" class="sidebar">
+      <div class="search"><input id="search" placeholder="検索"></div>
+      <div class="nav">
+        <button data-view="map" class="active">MAP</button>
+        <button data-view="today">TODAY</button>
+        <button data-view="wait">WAIT</button>
+        <button data-view="decision">DECIDE</button>
+      </div>
+      <div id="tree" class="tree"></div>
+    </aside>
+    <main class="main"><div id="view" class="view"></div></main>
+  </div>
+</div>
+
+<div id="settings" class="settings">
+  <div id="accountEmail" class="account-line"></div>
+  <button id="logoutBtn">ログアウト</button>
+  <button id="exportBtn">バックアップを書き出す</button>
+  <label>バックアップを読み込む<input id="importInput" type="file" accept=".json" hidden></label>
+  <button id="resetBtn">初期状態に戻す</button>
+  <div class="smallhint">編集内容はクラウドへ自動保存されます</div>
+</div>
+
+<div id="modal" class="modal">
+  <div class="box">
+    <h3>ADD ITEM</h3>
+    <input id="mTitle" placeholder="タイトル">
+    <input id="mType" placeholder="種類（Todo / 意思決定 / 待ち など）">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <select id="mImp"><option>高</option><option selected>中</option><option>低</option></select>
+      <select id="mUrg"><option>高</option><option selected>中</option><option>低</option></select>
+    </div>
+    <textarea id="mCurrent" placeholder="現状"></textarea>
+    <div class="actions">
+      <button class="ghost" id="mCancel">CANCEL</button>
+      <button class="solid" id="mAdd">ADD</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const SUPABASE_URL = "https://lrpmpxeexrybqjrhfgrd.supabase.co";
+const SUPABASE_KEY = "sb_publishable_qSfdjga57W_Pvh1E7TyiwA_keSClxUC";
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+let currentUser = null;
+let lastCloudUpdatedAt = 0;
+let cloudSaveInFlight = false;
+
+const KEY='ushijima_workmap_ops_v2';
+const INITIAL={"id": "root", "title": "MISSION CONTROL", "type": "root", "importance": "高", "urgency": "高", "status": "進行中", "owner": "牛島", "deadline": "", "current": "年間目標達成に向けた全案件を、目的→意思決定→実行の階層で管理する。", "issues": "", "solutions": "", "next": "", "children": [{"id": "annual", "title": "年間目標達成", "type": "最上位目的", "importance": "高", "urgency": "高", "status": "進行中", "owner": "牛島", "deadline": "", "current": "年間目標を達成することが最上位目的。", "issues": "事業の勝ち筋・定着・今月上振れ施策など、抽象度の違う論点が混在しやすい。", "solutions": "案件を階層化し、最上位目的とのつながりを維持して判断する。", "next": "事業の勝ち筋を決めるための前提情報を揃える。", "children": [{"id": "strategy", "title": "事業の勝ち筋を決める", "type": "重点テーマ", "importance": "高", "urgency": "高", "status": "進行中", "owner": "牛島", "deadline": "", "current": "ライフラインとサンプリングを1人当たり採算で比較し、主軸を決める。", "issues": "サンプリングのショット単価が未確定。ライフライン側も商材選定が必要。", "solutions": "先に確定できるライフライン条件を固め、サンプリングは現行条件で仮比較。ショット確定後に再比較。", "next": "アルカナとエネワンの条件比較を完了する。", "children": [{"id": "lifeline", "title": "ライフライン", "type": "意思決定", "importance": "高", "urgency": "高", "status": "進行中", "owner": "牛島", "deadline": "", "current": "エネワン電気とアルカナエナジーを比較中。", "issues": "単価だけでなく、獲得母数・学生/外国人可否・付帯商材まで含める必要がある。", "solutions": "1件単価ではなく、1人当たり最終売上で比較する。", "next": "アルカナの条件回答を受け、比較表を確定する。", "children": [{"id": "arcana", "title": "アルカナ or エネワン電気", "type": "意思決定", "importance": "高", "urgency": "高", "status": "確認待ち", "owner": "牛島", "deadline": "", "current": "幸野さんと条件確認中。", "issues": "13,300円だけで足切りすると、獲得母数や付帯期待値を見落とす可能性がある。", "solutions": "本体単価＋付帯期待値＋取次可能母数で比較する。", "next": "条件確定後に1人当たり採算を計算する。", "children": []}, {"id": "eneone", "title": "エネワン実質単価改善", "type": "改善テーマ", "importance": "高", "urgency": "中", "status": "未着手", "owner": "牛島", "deadline": "", "current": "開通率改善余地あり。", "issues": "口座案件の返送率が売上化率を押し下げている。", "solutions": "口座返送率を高める導線を作る。", "next": "返送率改善施策を整理する。", "children": []}]}, {"id": "sampling", "title": "サンプリング", "type": "意思決定", "importance": "高", "urgency": "中", "status": "待ち", "owner": "牛島", "deadline": "", "current": "ショット化自体は進みそうだが、単価が未確定。", "issues": "判断責任がある一方、交渉状況や単価情報が流れてこない。", "solutions": "現行ストック条件で仮比較し、ショット単価確定後に再計算する。", "next": "ショット単価・契約条件の共有を待つ。", "children": []}]}, {"id": "retention", "title": "定着", "type": "重点テーマ", "importance": "高", "urgency": "高", "status": "継続", "owner": "牛島/統括", "deadline": "", "current": "どの事業を主軸にしても、戦力維持が年間目標に直結する。", "issues": "離職リスクが事業計画を崩す。", "solutions": "統括経由で離職兆候を把握し、必要なフォローを前倒しする。", "next": "今週の離職リスク対象と対応を確認する。", "children": []}, {"id": "incentive", "title": "1・2月インセンティブ保証", "type": "重要論点", "importance": "高", "urgency": "中", "status": "判断前提不足", "owner": "牛島/社長", "deadline": "", "current": "牛島認識は原資なし。社長認識は原資あり。", "issues": "保証の費用対効果を判断する社内根拠が不足している。", "solutions": "原資・上限・目的を先に揃え、離職リスクとの関係を確認する。", "next": "社長に原資・上限・保証目的を確認する。", "children": []}]}, {"id": "urgent", "title": "緊急案件", "type": "カテゴリ", "importance": "高", "urgency": "高", "status": "進行中", "owner": "牛島", "deadline": "", "current": "期限が近く、放置コストが高い案件。", "issues": "", "solutions": "", "next": "期限順に処理する。", "children": [{"id": "dispatch", "title": "出向社員の業務確保", "type": "緊急案件", "importance": "高", "urgency": "高", "status": "未着手", "owner": "牛島", "deadline": "2026-10-26", "current": "26日以降、出向社員に業務がない。", "issues": "稼働先が未確定。", "solutions": "他部署に受け入れ可能業務がないか確認する。", "next": "他部署責任者へ確認を出す。", "children": []}, {"id": "keiyo", "title": "京葉ガス 人員不足", "type": "緊急案件", "importance": "高", "urgency": "高", "status": "進行中", "owner": "牛島", "deadline": "", "current": "5人月不足。", "issues": "必要稼働人数を満たせていない。", "solutions": "大阪出張延長＋2、牧野＋2、牛島＋2の組み合わせで対応。", "next": "大阪延長可否→牧野配置可否の順で確認。牛島は予備。", "children": []}, {"id": "au", "title": "auでんき 見送り対応", "type": "緊急案件", "importance": "中", "urgency": "高", "status": "未着手", "owner": "牛島", "deadline": "", "current": "auひかり設備導入済み物件限定で、自社の得意市場と親和性が低い。", "issues": "商談を進めてもらった後の見送りになる。", "solutions": "先に小島さんへ見送り判断を確認する。", "next": "小島さん確認→OKなら謝罪・見送り連絡。", "children": []}]}, {"id": "short600", "title": "600万ショート対応", "type": "上振れテーマ", "importance": "中", "urgency": "高", "status": "進行中", "owner": "牛島", "deadline": "", "current": "年間計画の本質ではないが、取れる売上は最大限取りにいく。", "issues": "施策によっては牛島の工数に対して売上寄与が小さい。", "solutions": "成果必達ではなく、施策を前に進めることをMustにする。低リターン施策は最小工数化。", "next": "オクトパス・SoftBank AirをDM側に渡せる状態まで整理。", "children": [{"id": "octopus", "title": "オクトパス社内獲得", "type": "施策", "importance": "低", "urgency": "高", "status": "進行中", "owner": "牛島/DM", "deadline": "", "current": "約9,000円×5件想定＝約45,000円。", "issues": "副社長指示だが、牛島が時間を使いすぎると割に合わない。", "solutions": "進め方だけ牛島が決め、DM側には手続きだけ依頼。", "next": "案内方法と手続きフローを決める。", "children": []}, {"id": "air", "title": "SoftBank Air紹介", "type": "施策", "importance": "低", "urgency": "高", "status": "進行中", "owner": "牛島/DM", "deadline": "", "current": "DM部と連携して紹介施策を進める。", "issues": "", "solutions": "牛島側で進め方を整理し、必要手続きのみ依頼。", "next": "対象・案内方法・開始日を決める。", "children": []}]}, {"id": "pipeline", "title": "予材", "type": "中期テーマ", "importance": "中", "urgency": "低", "status": "未着手", "owner": "牛島", "deadline": "", "current": "売上不足時に即営業できる法人向け商材を持ちたい。", "issues": "現状、即売れる高単価の法人商材が不足。", "solutions": "販売開始が早く、自社営業と親和性が高い商材を1本持つ。", "next": "既存取引先・紹介先から候補を洗い出す。", "children": []}]};
+let data=JSON.parse(localStorage.getItem(KEY)||JSON.stringify(INITIAL));
+let selected=data.id;
+let expanded=new Set([data.id,'annual','strategy','urgent','short600']);
+let currentView='map';
+let filterText='';
+let saveTimer=null;
+
+const $=id=>document.getElementById(id);
+function esc(s){return String(s??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[x]))}
+function attr(s){return esc(s).replace(/`/g,'&#096;')}
+function walk(n,fn,p=null,path=[]){fn(n,p,path);(n.children||[]).forEach(c=>walk(c,fn,n,[...path,n]))}
+function find(id){let node=null,parent=null,path=[];walk(data,(n,p,pa)=>{if(n.id===id){node=n;parent=p;path=pa}});return{node,parent,path}}
+function uid(){return'n_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+function setSync(text,color){
+  const el=$('sync'); if(!el)return; el.textContent=text; el.style.color=color||'#4ba884';
+}
+function save(){
+  localStorage.setItem(KEY,JSON.stringify(data));
+  setSync('SAVING...','#d2a64b');
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(()=>cloudSave(),500);
+}
+async function cloudSave(){
+  clearTimeout(saveTimer); saveTimer=null;
+  if(!currentUser){ setSync('LOCAL','#758493'); return; }
+  if(cloudSaveInFlight){ saveTimer=setTimeout(()=>cloudSave(),300); return; }
+  cloudSaveInFlight=true;
+  setSync('SAVING...','#d2a64b');
+  const now=new Date().toISOString();
+  const { data: saved, error } = await supabase
+    .from('workmaps')
+    .upsert({ user_id: currentUser.id, data, updated_at: now }, { onConflict: 'user_id' })
+    .select('updated_at')
+    .single();
+  cloudSaveInFlight=false;
+  if(error){ console.error(error); setSync('SAVE ERROR','#c64d4d'); return; }
+  lastCloudUpdatedAt=Date.parse(saved?.updated_at||now)||Date.now();
+  setSync('SAVED','#4ba884');
+}
+async function loadCloud(force=false){
+  if(!currentUser)return;
+  setSync('SYNC...','#5b91a6');
+  const { data: row, error } = await supabase
+    .from('workmaps')
+    .select('data,updated_at')
+    .eq('user_id', currentUser.id)
+    .maybeSingle();
+  if(error){ console.error(error); setSync('SYNC ERROR','#c64d4d'); return; }
+  if(row?.data){
+    const incoming=Date.parse(row.updated_at||0)||0;
+    if(force || incoming>=lastCloudUpdatedAt){
+      data=row.data;
+      lastCloudUpdatedAt=incoming;
+      localStorage.setItem(KEY,JSON.stringify(data));
+      if(!find(selected).node) selected=data.id;
+      render();
+    }
+    setSync('SAVED','#4ba884');
+  }else{
+    // First login: seed cloud with current local/initial data.
+    await cloudSave();
+    render();
+  }
+}
+
+function impClass(v){return v==='高'?'h':v==='中'?'m':'l'}
+function statusWaiting(n){return /待ち|確認待ち|前提/.test(n.status||'')||n.type==='待ち'}
+function actionable(n){return !statusWaiting(n)&&!/完了/.test(n.status||'')&&(n.type==='Todo'||n.type==='緊急案件'||n.type==='施策'||n.urgency==='高')}
+function decisionLike(n){return /意思決定|重要論点/.test(n.type||'')||/決め|判断/.test(n.title||'')}
+function dateScore(n){if(!n.deadline)return 999999;return new Date(n.deadline)-new Date()}
+function matches(n){return !filterText||JSON.stringify(n).toLowerCase().includes(filterText.toLowerCase())}
+function hasMatch(n){return matches(n)||(n.children||[]).some(hasMatch)}
+
+function renderTree(){
+  const root=$('tree');root.innerHTML='';
+  const ul=document.createElement('ul');ul.style.paddingLeft='0';ul.appendChild(treeNode(data));root.appendChild(ul)
+}
+function treeNode(n){
+  const li=document.createElement('li');
+  if(filterText&&!hasMatch(n)){li.style.display='none';return li}
+  const row=document.createElement('div');row.className='row'+(n.id===selected?' sel':'');
+  const tg=document.createElement('button');tg.className='toggle';const hc=(n.children||[]).length>0;
+  tg.textContent=hc?(expanded.has(n.id)?'−':'+'):'·';
+  tg.onclick=e=>{e.stopPropagation();if(!hc)return;expanded.has(n.id)?expanded.delete(n.id):expanded.add(n.id);renderTree()};
+  const dot=document.createElement('span');dot.className='dot '+impClass(n.importance);
+  const lab=document.createElement('div');lab.className='label';lab.textContent=n.title;
+  row.append(tg,dot,lab);row.onclick=()=>{selected=n.id;currentView='map';setNav();render()};
+  li.appendChild(row);
+  if(hc&&expanded.has(n.id)){const ul=document.createElement('ul');n.children.forEach(c=>ul.appendChild(treeNode(c)));li.appendChild(ul)}
+  return li
+}
+function setNav(){document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===currentView))}
+function render(){
+  renderTree();setNav();
+  if(currentView==='map')renderDetail();
+  else renderListView(currentView);
+}
+function breadcrumb(path,n){return [...path.map(x=>x.title),n.title].join(' / ')}
+function renderDetail(){
+  const {node:n,parent,path}=find(selected);if(!n)return;
+  $('view').innerHTML=`
+    <div class="path">${esc(breadcrumb(path,n))}</div>
+    <section class="head">
+      <div>
+        <h1 id="inlineTitle" contenteditable="true" spellcheck="false">${esc(n.title)}</h1>
+        <div class="meta">
+          <span class="chip">${esc(n.type||'')}</span>
+          <span class="chip ${n.importance==='高'?'danger':''}">重要 ${esc(n.importance||'')}</span>
+          <span class="chip ${n.urgency==='高'?'warn':''}">緊急 ${esc(n.urgency||'')}</span>
+          <span class="chip">${esc(n.status||'')}</span>
+        </div>
+      </div>
+      <div class="head-actions">
+        <button class="ghost" id="addChild">＋</button>
+        ${n.id!==data.id?'<button class="ghost" id="deleteNode">削除</button>':''}
+      </div>
+    </section>
+
+    <section class="grid">
+      ${block('current','現状','何が起きている？',n.current)}
+      ${block('issues','課題・原因','何が問題？ なぜ？',n.issues)}
+      ${block('solutions','解決策','どうする？',n.solutions)}
+      ${block('next','次にやる','次の1アクション',n.next,true)}
+    </section>
+
+    <details class="details">
+      <summary>DETAILS</summary>
+      <div class="detail-grid">
+        ${field('タイトル','title',n.title,'input')}
+        ${field('種類','type',n.type,'input')}
+        ${field('担当','owner',n.owner,'input')}
+        ${field('期限','deadline',n.deadline,'date')}
+        ${selectField('重要度','importance',['高','中','低'],n.importance)}
+        ${selectField('緊急度','urgency',['高','中','低'],n.urgency)}
+        ${field('ステータス','status',n.status,'input')}
+      </div>
+    </details>
+
+    <section class="children">
+      <div class="children-top"><strong>SUB ITEMS</strong><button class="ghost" id="addChild2">＋追加</button></div>
+      <div class="cards">
+        ${(n.children||[]).length?n.children.map(c=>`
+          <div class="card" data-id="${c.id}">
+            <div class="t">${esc(c.title)}</div>
+            <div class="s">${esc(c.type||'')} / ${esc(c.status||'')}</div>
+          </div>`).join(''):'<div class="empty">子項目なし</div>'}
+      </div>
+    </section>`;
+  document.querySelectorAll('.editor').forEach(el=>{
+    el.addEventListener('input',()=>{n[el.dataset.key]=el.innerText;save()});
+  });
+  const inlineTitle=$('inlineTitle');
+  if(inlineTitle){
+    inlineTitle.addEventListener('input',()=>{
+      const v=inlineTitle.innerText.replace(/\n/g,' ').trimStart();
+      n.title=v; save(); renderTree();
+    });
+    inlineTitle.addEventListener('keydown',(e)=>{
+      if(e.key==='Enter'){e.preventDefault(); inlineTitle.blur();}
+    });
+    inlineTitle.addEventListener('blur',()=>{
+      n.title=(inlineTitle.innerText||'無題').trim()||'無題';
+      save(); render();
+    });
+  }
+  document.querySelectorAll('[data-field]').forEach(el=>{
+    el.addEventListener('input',()=>{n[el.dataset.field]=el.value;save(); if(el.dataset.field==='title'||el.dataset.field==='importance')renderTree()});
+    el.addEventListener('change',()=>{n[el.dataset.field]=el.value;save();render()});
+  });
+  $('addChild').onclick=$('addChild2').onclick=()=>openModal(n.id);
+  const del=$('deleteNode');if(del)del.onclick=()=>{
+    if(confirm('この項目と配下を削除しますか？')){parent.children=parent.children.filter(c=>c.id!==n.id);selected=parent.id;save();render()}
+  };
+  document.querySelectorAll('.card').forEach(c=>c.onclick=()=>{selected=c.dataset.id;expanded.add(n.id);render()})
+}
+function block(key,title,ph,value,isNext=false){
+  return `<div class="block ${isNext?'next':''}">
+    <div class="block-head"><strong>${title}</strong><span>AUTO SAVE</span></div>
+    <div class="editor" contenteditable="true" data-key="${key}" data-placeholder="${ph}">${esc(value||'')}</div>
+  </div>`
+}
+function field(label,key,val,type='input'){
+  return `<div class="f"><label>${label}</label><input data-field="${key}" type="${type==='date'?'date':'text'}" value="${attr(val||'')}"></div>`
+}
+function selectField(label,key,opts,val){
+  return `<div class="f"><label>${label}</label><select data-field="${key}">${opts.map(o=>`<option ${o===val?'selected':''}>${o}</option>`).join('')}</select></div>`
+}
+function collect(pred){
+  const a=[];walk(data,(n,p,path)=>{if(n.id!==data.id&&pred(n))a.push({n,path})});return a
+}
+function renderListView(v){
+  let arr=[],title='',sub='';
+  if(v==='today'){arr=collect(n=>actionable(n)).sort((a,b)=>(a.n.urgency==='高'?-1:1)-(b.n.urgency==='高'?-1:1)||dateScore(a.n)-dateScore(b.n));title='TODAY';sub='今、自分が動けば前に進むもの'}
+  if(v==='wait'){arr=collect(statusWaiting);title='WAIT';sub='今は考え続けなくていいもの'}
+  if(v==='decision'){arr=collect(decisionLike);title='DECISIONS';sub='決めるべき論点'}
+  $('view').innerHTML=`
+    <div class="path">WORKMAP / ${title}</div>
+    <section class="head"><div><h1>${title}</h1><div class="meta"><span class="chip">${sub}</span></div></div></section>
+    <div class="list">
+      ${arr.length?arr.map(({n,path})=>`
+        <div class="item" data-id="${n.id}">
+          <div class="left"><b>${esc(n.title)}</b><div>${esc(path.map(x=>x.title).join(' / '))}</div></div>
+          <div class="right">${esc(n.status||'')} ${n.deadline?'・'+esc(n.deadline):''}</div>
+        </div>`).join(''):'<div class="empty">該当なし</div>'}
+    </div>`;
+  document.querySelectorAll('.item').forEach(i=>i.onclick=()=>{selected=i.dataset.id;currentView='map';render()})
+}
+function openModal(parentId){
+  $('modal').dataset.parent=parentId;$('mTitle').value='';$('mType').value='Todo';$('mImp').value='中';$('mUrg').value='中';$('mCurrent').value='';$('modal').classList.add('show');$('mTitle').focus()
+}
+$('mCancel').onclick=()=>$('modal').classList.remove('show');
+$('mAdd').onclick=()=>{
+  const title=$('mTitle').value.trim();if(!title)return;
+  const p=find($('modal').dataset.parent).node;
+  p.children=p.children||[];const n={id:uid(),title,type:$('mType').value||'Todo',importance:$('mImp').value,urgency:$('mUrg').value,status:'未着手',owner:'牛島',deadline:'',current:$('mCurrent').value,issues:'',solutions:'',next:'',children:[]};
+  p.children.push(n);expanded.add(p.id);selected=n.id;save();$('modal').classList.remove('show');render()
+};
+$('search').oninput=e=>{filterText=e.target.value;renderTree()};
+document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>{currentView=b.dataset.view;render()});
+$('settingsBtn').onclick=e=>{e.stopPropagation();$('settings').classList.toggle('show')};
+document.addEventListener('click',e=>{if(!e.target.closest('#settings')&&!e.target.closest('#settingsBtn'))$('settings').classList.remove('show')});
+$('exportBtn').onclick=()=>{
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='workmap_backup.json';a.click();URL.revokeObjectURL(a.href)
+};
+$('importInput').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{data=JSON.parse(r.result);selected=data.id;save();render()}catch{alert('読み込みに失敗しました')}};r.readAsText(f)
+};
+$('resetBtn').onclick=()=>{if(confirm('初期状態に戻しますか？')){data=JSON.parse(JSON.stringify(INITIAL));selected=data.id;save();render()}};
+$('mobileTree').onclick=()=>{$('sidebar').classList.toggle('mobile')};
+
+function showAuthMessage(message,type=''){
+  const el=$('authMsg'); el.textContent=message; el.className='auth-msg'+(type?' '+type:'');
+}
+function setLoggedIn(session){
+  currentUser=session?.user||null;
+  if(currentUser){
+    $('authGate').style.display='none';
+    $('app').style.display='block';
+    $('accountEmail').textContent=currentUser.email||'SIGNED IN';
+  }else{
+    $('app').style.display='none';
+    $('authGate').style.display='flex';
+    $('accountEmail').textContent='';
+  }
+}
+async function signIn(){
+  const email=$('authEmail').value.trim(); const password=$('authPassword').value;
+  if(!email||!password){ showAuthMessage('メールアドレスとパスワードを入力してください。','err'); return; }
+  showAuthMessage('認証中...');
+  const { data: result, error } = await supabase.auth.signInWithPassword({ email, password });
+  if(error){ showAuthMessage(error.message,'err'); return; }
+  setLoggedIn(result.session); showAuthMessage(''); await loadCloud(true);
+}
+async function signUp(){
+  const email=$('authEmail').value.trim(); const password=$('authPassword').value;
+  if(!email||password.length<6){ showAuthMessage('メールアドレスと6文字以上のパスワードを入力してください。','err'); return; }
+  showAuthMessage('登録中...');
+  const { data: result, error } = await supabase.auth.signUp({
+    email, password,
+    options:{ emailRedirectTo: window.location.origin }
+  });
+  if(error){ showAuthMessage(error.message,'err'); return; }
+  if(result.session){ setLoggedIn(result.session); showAuthMessage('登録完了。','ok'); await loadCloud(true); }
+  else showAuthMessage('確認メールを送りました。メール内のリンクを押した後、LOGINしてください。','ok');
+}
+$('signInBtn').onclick=signIn;
+$('signUpBtn').onclick=signUp;
+$('authPassword').addEventListener('keydown',e=>{ if(e.key==='Enter')signIn(); });
+$('logoutBtn').onclick=async()=>{ await cloudSave(); await supabase.auth.signOut(); setLoggedIn(null); showAuthMessage('ログアウトしました。','ok'); };
+
+async function initAuth(){
+  setSync('CONNECTING...','#5b91a6');
+  const { data: { session } } = await supabase.auth.getSession();
+  setLoggedIn(session);
+  if(session){ await loadCloud(true); }
+  else setSync('OFFLINE','#758493');
+
+  supabase.auth.onAuthStateChange(async(event,session)=>{
+    setLoggedIn(session);
+    if(session && (event==='SIGNED_IN'||event==='TOKEN_REFRESHED')){
+      currentUser=session.user;
+      if(event==='SIGNED_IN') await loadCloud(true);
+    }
+  });
+}
+
+// When returning to this tab/device, pull a newer cloud version if one exists.
+window.addEventListener('focus',()=>{ if(currentUser && !saveTimer && !cloudSaveInFlight) loadCloud(false); });
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='hidden' && currentUser && saveTimer) cloudSave();
+});
+
+initAuth();
+</script>
+</body>
+</html>
